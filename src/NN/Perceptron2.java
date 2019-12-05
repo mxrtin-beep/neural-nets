@@ -16,9 +16,9 @@ import java.util.*;
 public class Perceptron2
 {
    
-   private static final double MAX_LITTLE_ENDIAN_VALUE_ = 16777216.0;
+   private static final double MAX_LITTLE_ENDIAN_VALUE_ = -1.6777216E7;
    
-   private final double BITMAP_SCALING_FACTOR_ = Integer.MAX_VALUE/2;
+   private final double BITMAP_SCALING_FACTOR_ = MAX_LITTLE_ENDIAN_VALUE_;
    
    private DibDump2 dibDump_;
    private Node[][] nodes_;
@@ -255,7 +255,7 @@ public class Perceptron2
       {
          String sampleInputFile = rawData[TRUTH_TABLE_ROW_][0];
          createPelsFile(sampleInputFile, "inPels");
-         String[][] inputImgData = getRawData("inPels");
+         String[][] inputImgData = getRawData("SCALED " + "inPels");
          INPUT_DIM_ = inputImgData.length;
          assert (INPUT_DIM_ > 1);
          truthStartCol = 1;
@@ -280,7 +280,7 @@ public class Perceptron2
          int lastTruthIndex = rawData[TRUTH_TABLE_ROW_].length - 1;
          String sampleOutputFile = rawData[TRUTH_TABLE_ROW_][lastTruthIndex];
          createPelsFile(sampleOutputFile, "outPels");
-         String[][] outputImgData = getRawData("outPels");
+         String[][] outputImgData = getRawData("SCALED " + "outPels");
          OUTPUT_DIM_ = outputImgData.length;
          assert (INPUT_DIM_ > 1);
          OUTPUT_DIM_ = outputImgData.length;
@@ -437,7 +437,7 @@ public class Perceptron2
     */
    public double scalePel(int i)
    {
-      return (double) (dibDump_.swapInt(i)) / (BITMAP_SCALING_FACTOR_);
+      return (double) i / (BITMAP_SCALING_FACTOR_);
    }
    
    /**
@@ -447,8 +447,9 @@ public class Perceptron2
     */
    public int unscalePel(double d)
    {
-      return dibDump_.swapInt((int) (d * BITMAP_SCALING_FACTOR_));
+      return (int) (d * BITMAP_SCALING_FACTOR_);
    }
+   
    /**
     * Given an array of inputs, initializes the activations of the first layer of Nodes.  Initializes the activations of
     * the hidden layer and output layer Nodes by calling the forward function of each Node after the input layer, passing
@@ -545,6 +546,7 @@ public class Perceptron2
    private double getAvgGradientMagnitude()
    {
       double mag = 0;
+      
       for (int layer = 1; layer < nodes_.length; layer++) // Iterates through the hidden and output layers.
       {
          for (int i = 0; i < nodes_[layer].length; i++) // Iterates through each Node in the current layer.
@@ -569,6 +571,7 @@ public class Perceptron2
             for (int j = 0; j < nodes_[layer][i].weights_.length; j++)
             {
                double currentWeightGrad = nodes_[layer][i].weightsGradientSum_[j];
+               
                if (currentWeightGrad > max)
                {
                   max = currentWeightGrad;
@@ -770,31 +773,65 @@ public class Perceptron2
          {
             convertOutputsToBMPs(index);
          }
+         
          // Checking end conditions.
-         if (averageError <= MIN_ERROR_) // The average error has reached the minimum.
-         {
-            done = END_MIN_ERROR_;
-         }
-         if (errorBefore == error) // The error before and after changing weights has not changed.
-         {
-            done = END_ERROR_CONSTANT_;
-         }
-         if (learningFactor <= MIN_LEARNING_FACTOR_) // The learning factor is less than or equal to the minimum.
-         {
-            done = END_MIN_LAMBDA_;
-         }
-         if (learningFactor >= MAX_LEARNING_FACTOR_) // The learning factor is greater than or equal to the maximum.
-         {
-            done = END_MAX_LAMBDA_;
-         }
-         if (index >= MAX_TRAINING_ITERATIONS_) // The index has reached the maximum number of training iterations.
-         {
-            done = END_MAX_ITERATIONS_;
-         }
+         done = checkEndConditions(averageError, errorBefore, error, learningFactor, index);
          
       } while (done == DEFAULT_TRAINING_STATE_); // Ends once done is changed.
       
+      printErrorMessage(done);
       
+   }
+   
+   /**
+    * Checks the end conditions of training, and returns an appropriate value of done.
+    * @param averageError     The average error among all cases.
+    * @param errorBefore      The error before weights are changed.
+    * @param error            The error after weights are changed.
+    * @param learningFactor   The factor by which to multiply the weight gradients.
+    * @param index            The number of iterations of training that have elapsed
+    * @return
+    *    0 if none of the end conditions are met.
+    *    END_MIN_ERROR_ if the average error is smaller than the minimum error.
+    *    END_ERROR_CONSTANT_ if the error does not change after the weights are changed.
+    *    END_MIN_LAMBDA_ if the learning factor has reached the minimum.
+    *    END_MAX_LAMBDA_ if the learning factor has reached the maximum.
+    *    END_MAX_ITERATIONS_ if the maximum number of iterations has been reached.
+    */
+   public int checkEndConditions(double averageError, double errorBefore, double error, double learningFactor,
+                                 int index)
+   {
+      int done = 0; // The value of done that indicates that the perceptron is still training.
+      
+      if (averageError <= MIN_ERROR_) // The average error has reached the minimum.
+      {
+         done = END_MIN_ERROR_;
+      }
+      if (errorBefore == error) // The error before and after changing weights has not changed.
+      {
+         done = END_ERROR_CONSTANT_;
+      }
+      if (learningFactor <= MIN_LEARNING_FACTOR_) // The learning factor is less than or equal to the minimum.
+      {
+         done = END_MIN_LAMBDA_;
+      }
+      if (learningFactor >= MAX_LEARNING_FACTOR_) // The learning factor is greater than or equal to the maximum.
+      {
+         done = END_MAX_LAMBDA_;
+      }
+      if (index >= MAX_TRAINING_ITERATIONS_) // The index has reached the maximum number of training iterations.
+      {
+         done = END_MAX_ITERATIONS_;
+      }
+      return done;
+   }
+   /**
+    * Prints an error message based on the value of the given int.
+    * Used in training.
+    * @param done The given int.
+    */
+   public void printErrorMessage(int done)
+   {
       // Sets the error message based on the value of done.
       String errorMessage = "";
       if (done == END_MIN_ERROR_)
@@ -821,7 +858,7 @@ public class Perceptron2
    }
    
    /**
-    *  All Nodes store a backup of their current weights.
+    *  All Nodes store a backup of the current weights that they store.
     */
    public void backupWeights()
    {
@@ -835,7 +872,7 @@ public class Perceptron2
    }
    
    /**
-    *  All Nodes change their weights to their backups.
+    *  All of the Nodes of the weights revert to the backups that they store.
     */
    public void restoreWeights()
    {
@@ -849,10 +886,10 @@ public class Perceptron2
    }
    
    /**
-    * Returns a jagged 2D double array of the values in the input document.
-    * The first index represents the line, and the second index represents the double in that line.
+    * Returns a jagged 2D String array of the values in the given document.
+    * The first index represents the line, and the second index represents the String in that line.
     *
-    * @return a 2D double array of input document values.
+    * @return a 2D String array of given document values.
     */
    public String[][] getRawData(String s)
    {
@@ -892,8 +929,8 @@ public class Perceptron2
    
    /**
     * Separates a given String by spaces and puts each piece into an array.
-    * @param s
-    * @return
+    * @param s the given String.
+    * @return  an array with each word of the String.
     */
    public String[] parseStrings(String s)
    {
@@ -919,37 +956,7 @@ public class Perceptron2
    }
    
    /**
-    * Parses a string and returns an array of doubles.
-    * S must contain doubles separated by spaces.
-    *
-    * @param s the given string.
-    * @return a double[] of doubles in the string.
-    */
-   public double[] parseDoubles(String s)
-   {
-      Scanner sc = new Scanner(s);
-      
-      // Counts how many doubles in the String to initialize the length of the array.
-      int length = 0;
-      while (sc.hasNextDouble())
-      {
-         length++;
-         sc.nextDouble();
-      }
-      sc.close();
-      double[] doubles = new double[length];
-      
-      // Assigns each double to the array.
-      Scanner sc2 = new Scanner(s);
-      for (int i = 0; i < length; i++)
-      {
-         doubles[i] = sc2.nextDouble();
-      }
-      return doubles;
-   }
-   
-   /**
-    * Prints the weights and activations of each layer and the input and expected values.
+    * Prints the weights and activations of each layer.
     */
    public void print()
    {
@@ -980,7 +987,7 @@ public class Perceptron2
    }
    
    /**
-    * Prints the Nodes, weights, and errors for each case.
+    * Prints the truths, outputs, and errors for each case.
     */
    public void printAll()
    {
@@ -989,7 +996,6 @@ public class Perceptron2
          System.out.println("***** CASE " + i + " ******");
          
          forward(inputs_[i]);    // Updates all the activations.
-         //print();                // Prints all weights and activations of the network.
          
          
          // Prints all the truths for case i.
@@ -1023,30 +1029,6 @@ public class Perceptron2
          System.out.println("ERRORS: \t" + errorsString + "\n");
          
       } // for (int i = 0; i < inputs_.length; i++) // Iterates through each case.
-   }
-   
-   public void writeOutputsToFile()
-   {
-   
-   }
-   
-   public double sigmoid(double x)
-   {
-      return 1.0 / (1 + Math.exp(-x));
-   }
-   
-   public String[][] scale(String [][] ints)
-   {
-      String[][] dubs = new String[ints.length][];
-      for (int i = 0; i < ints.length; i++)
-      {
-         dubs[i] = new String[ints[i].length];
-         for (int j = 0; j < ints[i].length; j++)
-         {
-            dubs[i][j] = "" + (double) Integer.parseInt(ints[i][j]);
-         }
-      }
-      return dubs;
    }
    
    /**
@@ -1151,7 +1133,7 @@ public class Perceptron2
    {
       double time1 = System.currentTimeMillis();
       Perceptron2 p = new Perceptron2("text/input", true, true, false);
-      p.createPelsFile("smallA.bmp", "smallApels");
+      //p.createPelsFile("nums/colortest.bmp", "colortestPels");
       p.train();
       p.writeWeightsToFile();
       p.convertOutputsToBMPs(0);
