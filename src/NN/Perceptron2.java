@@ -18,7 +18,7 @@ public class Perceptron2
    
    private static final double MAX_LITTLE_ENDIAN_VALUE_ = 16777216.0;
    
-   private final double BITMAP_SCALING_FACTOR_ = MAX_LITTLE_ENDIAN_VALUE_;
+   private final double BITMAP_SCALING_FACTOR_ = Integer.MAX_VALUE/2;
    
    private DibDump2 dibDump_;
    private Node[][] nodes_;
@@ -209,8 +209,9 @@ public class Perceptron2
    /**
     * Perceptron2 constructor for image stuff.
     * @param config  The config file.
-    * @param usingInputImage
-    * @param usingOutputImage
+    * @param usingInputImage  Whether the perceptron is using an input image, as opposed to manually set inputs.
+    * @param usingOutputImage Whether the perceptron is using an expected output image, as opposed to manually set truths.
+    * @param usingWeightsFile Whether the perceptron is reading weights from a file, as opposed to random weights.
     */
    public Perceptron2 (String config, boolean usingInputImage, boolean usingOutputImage, boolean usingWeightsFile)
    {
@@ -250,13 +251,13 @@ public class Perceptron2
       * an input image, and the first value of the ACTIVATION_ROW_ of the config document if
       * the perceptron is not using an input image.
        */
-      if(usingInputImage)
+      if (usingInputImage)
       {
          String sampleInputFile = rawData[TRUTH_TABLE_ROW_][0];
          createPelsFile(sampleInputFile, "inPels");
          String[][] inputImgData = getRawData("inPels");
          INPUT_DIM_ = inputImgData.length;
-         assert(INPUT_DIM_ > 1);
+         assert (INPUT_DIM_ > 1);
          truthStartCol = 1;
       }
       else
@@ -281,7 +282,7 @@ public class Perceptron2
          createPelsFile(sampleOutputFile, "outPels");
          String[][] outputImgData = getRawData("outPels");
          OUTPUT_DIM_ = outputImgData.length;
-         assert(INPUT_DIM_ > 1);
+         assert (INPUT_DIM_ > 1);
          OUTPUT_DIM_ = outputImgData.length;
       }
       else
@@ -381,7 +382,7 @@ public class Perceptron2
          
       } // for (int i = 0; i < NUM_LAYERS_; i++)
       
-      if(usingWeightsFile)
+      if (usingWeightsFile)
       {
          setWeightsFromFile(weightsFileName_);
       }
@@ -395,10 +396,10 @@ public class Perceptron2
    public double[][] intArrayToDoubleArray(int[][] ints)
    {
       double[][] dubs = new double[ints.length][];
-      for(int i = 0; i < ints.length; i++)
+      for (int i = 0; i < ints.length; i++)
       {
          dubs[i] = new double[ints[i].length];
-         for(int j = 0; j < ints[i].length; j++)
+         for (int j = 0; j < ints[i].length; j++)
          {
             dubs[i][j] = ints[i][j];
          }
@@ -458,7 +459,7 @@ public class Perceptron2
     */
    public double[] forward(double[] inputs)
    {
-      assert(inputs.length == nodes_[0].length);
+      assert (inputs.length == nodes_[0].length);
       
       // Sets the activations of the input Nodes of the perceptron to those of the given array of inputs.
       for (int i = 0; i < inputs.length; i++)
@@ -565,10 +566,10 @@ public class Perceptron2
       {
          for (int i = 0; i < nodes_[layer].length; i++) // Iterates through each Node in the current layer.
          {
-            for(int j = 0; j < nodes_[layer][i].weights_.length; j++)
+            for (int j = 0; j < nodes_[layer][i].weights_.length; j++)
             {
                double currentWeightGrad = nodes_[layer][i].weightsGradientSum_[j];
-               if(currentWeightGrad > max)
+               if (currentWeightGrad > max)
                {
                   max = currentWeightGrad;
                }
@@ -765,9 +766,9 @@ public class Perceptron2
          
          index++;
          
-         if(index % INTERMED_TRAINING_ITERATIONS_ == 0)
+         if (index % INTERMED_TRAINING_ITERATIONS_ == 0)
          {
-            convertOutputsToBMPs("intermed", index);
+            convertOutputsToBMPs(index);
          }
          // Checking end conditions.
          if (averageError <= MIN_ERROR_) // The average error has reached the minimum.
@@ -1063,10 +1064,11 @@ public class Perceptron2
    }
    
    /**
-    * Converts all the outputs to BMP files with an index.
-    * @param filename The name of the ouptut file.
+    * Converts all the outputs to BMP files. The name of the file will be outputFileName_ + an index indicating the case + a
+    * hyphen + an index indicating the intermediate output + the extension.
+    * @param index a number to follow the name of the file used for indicating the chronological order of intermediate outputs.
     */
-   public void convertOutputsToBMPs(String filename, int index)
+   public void convertOutputsToBMPs(int index)
    {
       int[][] intOutputs = new int[0][0];
       for (int i = 0; i < NUM_CASES_; i++)
@@ -1084,44 +1086,43 @@ public class Perceptron2
             }
             out.close();
             int[][] pelsIntArray = dibDump_.pelsFileToArray("finalOutPels" + i);
-            dibDump_.writeBMPFile(filename + i + "-" + index + ".bmp", pelsIntArray);
+            dibDump_.writeBMPFile(outputFileName_ + i + "-" + index + "" + ".bmp", pelsIntArray);
          }
-         catch(IOException e)
+         catch (IOException e)
          {
             throw new RuntimeException(e);
          }
       }
       
-      assert(intOutputs.length != 0);
+      assert (intOutputs.length != 0);
       
    }
    
    /**
-    * Writes the weights of the network to a file.
-    * @param filename   The desired name of the file.
+    * Writes the weights of the network to a text file with the name of weightsFileName_.
     */
-   public void writeWeightsToFile(String filename)
+   public void writeWeightsToFile()
    {
       ArrayList<String> weights = new ArrayList<String>();
-      for(int i = 0; i < nodes_.length; i++)
+      for (int i = 0; i < nodes_.length; i++)
       {
-         for(int j = 0; j < nodes_[i].length; j++)
+         for (int j = 0; j < nodes_[i].length; j++)
          {
             Node n = nodes_[i][j];
-            for(int k = 0; k < n.weights_.length; k++)
+            for (int k = 0; k < n.weights_.length; k++)
             {
                weights.add("" + n.weights_[k]);
             }
          }
-      } // for(int i = 0; i < nodes_.length; i++)
+      } // for (int i = 0; i < nodes_.length; i++)
       
       Iterator<String> weightItr = weights.iterator();
       
-      FileUtil.saveFile(filename, weightItr);
+      FileUtil.saveFile(weightsFileName_, weightItr);
    }
    
    /**
-    * Sets the weights of the network to the doubles in the file.
+    * Sets the weights of the network to the doubles in the given file.
     * @param filename   The name of the file.
     */
    public void setWeightsFromFile(String filename)
@@ -1129,18 +1130,18 @@ public class Perceptron2
       String[][] newWeights = getRawData(filename);
       int index = 0;
       
-      for(int i = 0; i < nodes_.length; i++)
+      for (int i = 0; i < nodes_.length; i++)
       {
-         for(int j = 0; j < nodes_[i].length; j++)
+         for (int j = 0; j < nodes_[i].length; j++)
          {
             Node n = nodes_[i][j];
-            for(int k = 0; k < n.weights_.length; k++)
+            for (int k = 0; k < n.weights_.length; k++)
             {
                n.weights_[k] = Double.parseDouble(newWeights[index][0]);
                index++;
             }
          }
-      } // for(int i = 0; i < nodes_.length; i++)
+      } // for (int i = 0; i < nodes_.length; i++)
    }
    /**
     * Creates a new Perceptron and has it call the test() method.
@@ -1151,17 +1152,17 @@ public class Perceptron2
       double time1 = System.currentTimeMillis();
       Perceptron2 p = new Perceptron2("text/input", true, true, false);
       p.createPelsFile("smallA.bmp", "smallApels");
-//      p.train();
-//      p.writeWeightsToFile("weights");
-//      p.convertOutputsToBMPs("finalImage", 0);
-//
-//
-//      p.printAll();
-//      double time2 = System.currentTimeMillis();
-//      double timeElapsedMillis = time2 - time1;
-//      double timeElapsedSec = timeElapsedMillis/p.MILLISEC_PER_SEC_;
-//      double timeElapsedMin = timeElapsedSec/p.SECS_PER_MIN_;
-//      System.out.println("Time Elapsed: " + timeElapsedMin + " minutes.");
+      p.train();
+      p.writeWeightsToFile();
+      p.convertOutputsToBMPs(0);
+
+
+      p.printAll();
+      double time2 = System.currentTimeMillis();
+      double timeElapsedMillis = time2 - time1;
+      double timeElapsedSec = timeElapsedMillis/p.MILLISEC_PER_SEC_;
+      double timeElapsedMin = timeElapsedSec/p.SECS_PER_MIN_;
+      System.out.println("Time Elapsed: " + timeElapsedMin + " minutes.");
       //p.print();
       //p.printActivations();
    }

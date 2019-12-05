@@ -1,29 +1,11 @@
 package NN;
 
 /**
+ * @author Martin Bourdev
+ * @version September 24, 2019
+ *
  * The Node class represents an activation in a perceptron, and holds the weights feeding into the activation,
  * the incoming gradient, a weights gradient sum for each weight, and a backup weight for each weight.
- *
- * Node stores the following instance variables.
- *
- * double[] weights_,
- * double activation_,
- * double incomingGradient_,
- * double[] weightsGradientSum_, and
- * double[] backupWeights_.
- *
- * Node performs the following methods.
- *
- * forward(Node[] prevLayer)              Updates activation to weighted sum of activations of prevLayer.
- * backward(Node[] prevLayer)             Stores delta weight and sets the incomingGradient_s of prevLayer.
- * resetWeightGradientSum()               Sets all weight gradient sums to zero.
- * updateWeights(double learningFactor)   Updates weights based on learningFactor and weightsGradient_.
- * getAvgGradientMag()                    Returns the average magnitude of each weight gradient.
- * sigmoid(double x)                      Returns 1.0 / (1.0 + e^x).
- * toString()                             Returns the activation and weights.
- * backupWeights()                        Stores each weight in a backup.
- * restoreWeights()                       Sets weights to their backups.
- * print()                                Prints the weights and activation.
  */
 public class Node
 {

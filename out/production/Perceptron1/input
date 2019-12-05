@@ -1,12 +1,12 @@
-experimental
+processedImage
 weights
-2 1 2
+2 100 3
 -0.001  0.001
 0
-0.01 1 0.0 10000000000000000.0
+1 1.01 0.0 10000.0
 50000 0
 1
-smallA.bmp   smallA.bmp
+smallA.bmp    smallA.bmp
 
 
 
