@@ -18,7 +18,8 @@ public class Perceptron2
    
    private static final double MAX_LITTLE_ENDIAN_VALUE_ = -1.6777216E7;
    
-   private final double BITMAP_SCALING_FACTOR_ = MAX_LITTLE_ENDIAN_VALUE_;
+   private final double BITMAP_SCALING_FACTOR_ = MAX_LITTLE_ENDIAN_VALUE_;    // Pels are divided by this number when used as
+                                                                              // inputs.
    
    private DibDump2 dibDump_;
    private Node[][] nodes_;
@@ -39,18 +40,22 @@ public class Perceptron2
    private double INTERMED_TRAINING_ITERATIONS_;         // The number of iterations before an intermediate image is produced
                                                          // during training
    
-   private final int OUTPUT_FILE_NAME_ROW_ = 0;
-   private final int OUTPUT_FILE_NAME_COL_ = 0;
+   // The following constants define the rows and columns of values configurable in the input document.
    
-   private final int WEIGHTS_FILE_NAME_ROW_ = 1;
-   private final int WEIGHTS_FILE_NAME_COL_ = 0;
+   private final int OUTPUT_FILE_NAME_ROW_ = 0; // The row in the document that holds the filename of the output image.
+   private final int OUTPUT_FILE_NAME_COL_ = 0; // The column in OUTPUT_FILE_NAME_ROW_ that holds the the filename of the output
+                                                // image.
+   
+   private final int WEIGHTS_FILE_NAME_ROW_ = 1;   // The row in the document that holds the filename of the weights file.
+   private final int WEIGHTS_FILE_NAME_COL_ = 0;   // The column in WEIGHTS_FILE_NAME_COL_ that holds the the filename of the
+                                                   // weights file.
    
    private final int ACTIVATION_ROW_ = 2;    // The row in the document that holds the number of activations in each layer.
    private final int INPUT_DIM_COL_ = 0;     // The column in ACTIVATION_ROW_ that holds the number of input activations.
    
-   private final int INITIAL_WEIGHT_ROW_ = 3;
-   private final int INITIAL_WEIGHT_MIN_COL_ = 0;
-   private final int INITIAL_WEIGHT_MAX_COL_ = 1;
+   private final int INITIAL_WEIGHT_ROW_ = 3;      // The row in the document that holds the initial weight maxes and mins.
+   private final int INITIAL_WEIGHT_MIN_COL_ = 0;  // The column in INITIAL_WEIGHT_MIN_COL_ that holds the minimum initial weight.
+   private final int INITIAL_WEIGHT_MAX_COL_ = 1;  // The column in INITIAL_WEIGHT_MIN_COL_ that holds the maximum initial weight.
    
    private final int MIN_ERROR_ROW_ = 4;     // The row in the document that holds the minimum error.
    private final int MIN_ERROR_COL_ = 0;     // The column in MIN_ERROR_ROW_ that holds the minimum error.
@@ -80,28 +85,29 @@ public class Perceptron2
    // The column in MAX_TRAINING_ITERATIONS_ROW_ that holds the maximum number of training iterations.
    private final int MAX_TRAINING_ITERATIONS_COL_ = 0;
    
+   // The column in MAX_TRAINING_ITERATIONS_ROW_ that holds number of iterations between each intermediate output image.
    private final int INTERMED_TRAINING_ITERATIONS_COL_ = 1;
    
    
    
-   private final int NUM_CASES_ROW_ = 7;                 // The row in the document that holds the number of cases.
-   private final int NUM_CASES_COL_ = 0;                 // The column in NUM_CASES_ROW_ that holds the number of cases.
+   private final int NUM_CASES_ROW_ = 7;     // The row in the document that holds the number of cases.
+   private final int NUM_CASES_COL_ = 0;     // The column in NUM_CASES_ROW_ that holds the number of cases.
    
-   private final int TRUTH_TABLE_ROW_ = 8;               // The row in the document where the truth table starts.
+   private final int TRUTH_TABLE_ROW_ = 8;   // The row in the document where the truth table starts.
    
-   private double INITIAL_WEIGHT_MIN_;
-   private double INITIAL_WEIGHT_MAX_;
+   private double INITIAL_WEIGHT_MIN_;    // The minimum bound for randomly initialized weights.
+   private double INITIAL_WEIGHT_MAX_;    // The maximum bound for randomly initialized weights.
    
-   private int NUM_CASES_;          // The number of cases.
-   private int INPUT_DIM_;          // The number of input activations.
-   private int NUM_LAYERS_;         // The number of layers.
-   private int OUTPUT_DIM_;         // The number of output activations.
-   private int OUTPUT_LAYER_INDEX_; // The index of the output layer.
+   private int NUM_CASES_;             // The number of cases.
+   private int INPUT_DIM_;             // The number of input activations.
+   private int NUM_LAYERS_;            // The number of layers.
+   private int OUTPUT_DIM_;            // The number of output activations.
+   private int OUTPUT_LAYER_INDEX_;    // The index of the output layer.
    
-   private String outputFileName_;
-   private String weightsFileName_;
+   private String outputFileName_;     // The filename of the output image.
+   private String weightsFileName_;    // The filename of the weights file.
    
-   // The following constants represent the state of the perceptron while training and are only used in the method train().
+   // The following constants represent the state of the perceptron while training and are only used in training.
    
    private final int DEFAULT_TRAINING_STATE_ = 0;  // The perceptron is still training.
    private final int END_MIN_ERROR_ = 1;           // The perceptron has ended training due to reaching the minimum error.
@@ -122,113 +128,23 @@ public class Perceptron2
    public final int SECS_PER_MIN_ = 60;
    
    /**
-    * Perceptron2 constructor.
-    * Collects configurable data from a file given a filename. Initializes the inputs_ and truths_ array based on document
-    * values. Initializes the nodes_ array.
-    *
-    * @param filename The name of the file from which to retrieve configurable data.
-    */
-   public Perceptron2 (String filename)
-   {
-      String[][] rawData = getRawData(filename); // Stores the data from the input document into a matrix.
-      
-      
-      
-      /*
-       * Initializes the start and end conditions for training.
-       * Initializes the minimum error, initial learning factor, change in learning factor, maximum
-       * learning factor, minimum learning factor, and maximum training iterations.
-       */
-      MIN_ERROR_ = Double.parseDouble(rawData[MIN_ERROR_ROW_][MIN_ERROR_COL_]); // Minimum error is the first value of MIN_ERROR_ROW_.
-      
-      // Initializes the learning factor start and end conditions based on their respective columns.
-      INITIAL_LEARNING_FACTOR_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][INITIAL_LEARNING_FACTOR_COL_]);
-      LEARNING_FACTOR_CHANGE_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][LEARNING_FACTOR_CHANGE_COL_]);
-      MIN_LEARNING_FACTOR_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][MIN_LEARNING_FACTOR_COL_]);
-      MAX_LEARNING_FACTOR_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][MAX_LEARNING_FACTOR_COL_]);
-      
-      MAX_TRAINING_ITERATIONS_ = Double.parseDouble(rawData[TRAINING_ITERATIONS_ROW_][MAX_TRAINING_ITERATIONS_COL_]);
-      
-      
-      NUM_CASES_ = (int) Double.parseDouble(rawData[NUM_CASES_ROW_][NUM_CASES_COL_]);
-      INPUT_DIM_ = (int) Double.parseDouble(rawData[ACTIVATION_ROW_][INPUT_DIM_COL_]); // The number of input activations.
-      NUM_LAYERS_ = rawData[ACTIVATION_ROW_].length;
-      OUTPUT_LAYER_INDEX_ = NUM_LAYERS_ - 1;
-      OUTPUT_DIM_ = (int) Double.parseDouble(rawData[ACTIVATION_ROW_][OUTPUT_LAYER_INDEX_]);
-      
-      
-      inputs_ = new double[NUM_CASES_][INPUT_DIM_];    // Will store all input arrays.
-      truths_ = new double[NUM_CASES_][OUTPUT_DIM_];   // Will store all truths.
-      
-      // Initializes the inputs array and truths array.
-      for (int i = 0; i < NUM_CASES_; i++) // Iterates through all cases.
-      {
-         for (int j = 0; j < INPUT_DIM_; j++) // Iterates through all input Nodes.
-         {
-            inputs_[i][j] = Double.parseDouble(rawData[TRUTH_TABLE_ROW_ + i][j]); // Initializes input array.
-         }
-         for (int j = 0; j < OUTPUT_DIM_; j++) // Iterates through the number of outputs, which equals the number of truths.
-         {
-            // Initializes the truths, skipping the inputs in the truth table by adding INPUT_DIM_ to the second index.
-            truths_[i][j] = Double.parseDouble(rawData[TRUTH_TABLE_ROW_ + i][INPUT_DIM_ + j]);
-         }
-      }
-      
-      nodes_ = new Node[NUM_LAYERS_][]; // Creates the 2D array of Nodes with a length of numLayers.
-      
-      /*
-       * Stores the size of the previous layer of activations, starting with zero.
-       * This number is required to create a Node, which takes in the size of the previous
-       * layer to create the array of weights going into that Node. The inputs have no weights going into
-       * them, so the previous size starts at zero.
-       */
-      int prevLayerSize = 0;
-      int layerSize;
-      
-      // Initializes the array of Nodes.
-      for (int i = 0; i < NUM_LAYERS_; i++)
-      {
-         /*
-          * Defines the size of the current layer being initialized as the ith value in the activation
-          * row of the document.
-          */
-         layerSize = (int) Double.parseDouble(rawData[ACTIVATION_ROW_][i]);
-         
-         nodes_[i] = new Node[layerSize];
-         
-         for (int j = 0; j < layerSize; j++) // Iterates through the number of Nodes in the current layer.
-         {
-            // Takes in a number of weights to feed into the Node equal to the size of the previous layer.
-            nodes_[i][j] = new Node(prevLayerSize, -1, 1);
-         }
-         prevLayerSize = layerSize; // Updates the previous layer size.
-         
-      } // for (int i = 0; i < NUM_LAYERS_; i++)
-   }
-   
-   /**
     * Perceptron2 constructor for image stuff.
     * @param config  The config file.
-    * @param usingInputImage  Whether the perceptron is using an input image, as opposed to manually set inputs.
-    * @param usingOutputImage Whether the perceptron is using an expected output image, as opposed to manually set truths.
-    * @param usingWeightsFile Whether the perceptron is reading weights from a file, as opposed to random weights.
+    * @param usingInputImage  Whether the perceptron is using an input image, as opposed to inputs set in the config file.
+    * @param usingTruthImage Whether the perceptron is using an expected output image, as opposed to truths set in the config file.
+    * @param usingWeightsFile Whether the perceptron is reading weights from a file, as opposed to randomly-initialized weights.
     */
-   public Perceptron2 (String config, boolean usingInputImage, boolean usingOutputImage, boolean usingWeightsFile)
+   public Perceptron2 (String config, boolean usingInputImage, boolean usingTruthImage, boolean usingWeightsFile)
    {
-      String[][] rawData = getRawData(config); // Stores the data from the input document into a matrix.
+      String[][] rawData = getRawData(config); // Stores the data from the config document into a matrix.
    
+      // Initializes all the values stored in the config file.
       
       outputFileName_ = rawData[OUTPUT_FILE_NAME_ROW_][OUTPUT_FILE_NAME_COL_];
       weightsFileName_ = rawData[WEIGHTS_FILE_NAME_ROW_][WEIGHTS_FILE_NAME_COL_];
       
-      /*
-       * Initializes the start and end conditions for training.
-       * Initializes the minimum error, initial learning factor, change in learning factor, maximum
-       * learning factor, minimum learning factor, and maximum training iterations.
-       */
-      MIN_ERROR_ = Double.parseDouble(rawData[MIN_ERROR_ROW_][MIN_ERROR_COL_]); // Minimum error is the first value of MIN_ERROR_ROW_.
+      MIN_ERROR_ = Double.parseDouble(rawData[MIN_ERROR_ROW_][MIN_ERROR_COL_]);
       
-      // Initializes the learning factor start and end conditions based on their respective columns.
       INITIAL_LEARNING_FACTOR_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][INITIAL_LEARNING_FACTOR_COL_]);
       LEARNING_FACTOR_CHANGE_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][LEARNING_FACTOR_CHANGE_COL_]);
       MIN_LEARNING_FACTOR_ = Double.parseDouble(rawData[LEARNING_FACTOR_ROW_][MIN_LEARNING_FACTOR_COL_]);
@@ -245,7 +161,8 @@ public class Perceptron2
    
       dibDump_ = new DibDump2();
       
-      int truthStartCol;
+      int truthStartCol; // The column in the truth table where the truths start.
+      
       /*
       * Sets the value of INPUT_DIM_ to the number of pels in inputImgData if the perceptron is using
       * an input image, and the first value of the ACTIVATION_ROW_ of the config document if
@@ -275,7 +192,7 @@ public class Perceptron2
        * an output image, and the last value of the ACTIVATION_ROW_ of the config document if
        * the perceptron is not using an output image.
        */
-      if (usingOutputImage)
+      if (usingTruthImage)
       {
          int lastTruthIndex = rawData[TRUTH_TABLE_ROW_].length - 1;
          String sampleOutputFile = rawData[TRUTH_TABLE_ROW_][lastTruthIndex];
@@ -291,22 +208,21 @@ public class Perceptron2
       }
       
       
-      
-      
       inputs_ = new double[NUM_CASES_][INPUT_DIM_];    // Will store all input arrays.
-      truths_ = new double[NUM_CASES_][OUTPUT_DIM_];   // Will store all truths.
+      truths_ = new double[NUM_CASES_][OUTPUT_DIM_];   // Will store all truths arrays.
       
       // Initializes the inputs array and truths array.
+      
       for (int i = 0; i < NUM_CASES_; i++) // Iterates through all cases.
       {
-         if (!usingInputImage) // If not using input image, get inputs from truth table in config file.
+         if (!usingInputImage) // If not using an input image, gets inputs from the truth table in the config file.
          {
             for (int j = 0; j < INPUT_DIM_; j++) // Iterates through all input Nodes.
             {
                inputs_[i][j] = Double.parseDouble(rawData[TRUTH_TABLE_ROW_ + i][j]); // Initializes input array.
             }
          }
-         else // If using input image, convert file into pels file, and use pels file as inputs.
+         else // If using an input image, converts the file into a pels file and uses the pels file as inputs.
          {
             String tableInput = rawData[TRUTH_TABLE_ROW_ + i][0];
             createPelsFile(tableInput, "inPels" + i);
@@ -318,7 +234,7 @@ public class Perceptron2
          }
          
          
-         if (!usingOutputImage) // If not using input image, get inputs from truth table in config file.
+         if (!usingTruthImage) // If not using a truth image, gets truths from the truth table in the config file.
          {
             for (int j = 0; j < OUTPUT_DIM_; j++) // Iterates through the number of outputs, which equals the number of truths.
             {
@@ -326,7 +242,7 @@ public class Perceptron2
                truths_[i][j] = Double.parseDouble(rawData[TRUTH_TABLE_ROW_ + i][truthStartCol + j]);
             }
          }
-         else // If using input image, convert file into pels file, and use pels file as inputs.
+         else // If using a truth image, converts the file into a pels file and uses the pels file as truths.
          {
             String tableOutput = rawData[TRUTH_TABLE_ROW_ + i][rawData[TRUTH_TABLE_ROW_ + i].length - 1];
             createPelsFile(tableOutput, "outPels" + i);
@@ -396,6 +312,7 @@ public class Perceptron2
    public double[][] intArrayToDoubleArray(int[][] ints)
    {
       double[][] dubs = new double[ints.length][];
+      
       for (int i = 0; i < ints.length; i++)
       {
          dubs[i] = new double[ints[i].length];
@@ -406,8 +323,10 @@ public class Perceptron2
       }
       return dubs;
    }
+   
    /**
-    * Creates a file of pels from a given image.
+    * Creates a file of raw pels and a file of scaled pels from the given image. The file names will be "UNSCALED + " outFileName
+    * and "SCALED " + outFileName.
     * @param inFileName The name of the given image.
     * @param outFileName   The desired name of the pels file.
     */
@@ -451,12 +370,12 @@ public class Perceptron2
    }
    
    /**
-    * Given an array of inputs, initializes the activations of the first layer of Nodes.  Initializes the activations of
-    * the hidden layer and output layer Nodes by calling the forward function of each Node after the input layer, passing
-    * in the previous layer of Nodes.  Returns the activation of the first Node in the last layer.
+    * Given an array of inputs, the function initializes the activations of the first layer of Nodes. Then, it initializes the
+    * activations of the hidden layer and output layer Nodes by calling the forward function of each Node after the input layer,
+    * passing in the previous layer of Nodes. Lastly, it returns an array of the activations of the output Nodes.
     *
     * @param inputs  An array of the input values.
-    * @return  The activation of the first Node in the last layer.
+    * @return  An array of the activations of the output Nodes.
     */
    public double[] forward(double[] inputs)
    {
@@ -507,7 +426,6 @@ public class Perceptron2
          nodes_[OUTPUT_LAYER_INDEX_][i].incomingGradient_ = -(truths[i] - outputs[i]);
       }
       
-      
       /*
        * First, sets the incoming gradients of all Nodes to zero, other than those of the last layer.
        * Calls the method backward on every Node  starting with the last one and going backward, passing in the previous
@@ -521,7 +439,7 @@ public class Perceptron2
          // Sets the incoming gradient of the Nodes in the previous layer to 0.
          for (int i = 0; i < nodes_[layer - 1].length; i++)
          {
-            nodes_[layer - 1][i].incomingGradient_ = 0;
+            nodes_[layer - 1][i].incomingGradient_ = 0.0;
          }
          
          /*
@@ -545,7 +463,7 @@ public class Perceptron2
     */
    private double getAvgGradientMagnitude()
    {
-      double mag = 0;
+      double mag = 0.0;
       
       for (int layer = 1; layer < nodes_.length; layer++) // Iterates through the hidden and output layers.
       {
@@ -563,12 +481,13 @@ public class Perceptron2
     */
    public double getMaxGradientMagnitude()
    {
-      double max = 0;
+      double max = 0.0;
+      
       for (int layer = 1; layer < nodes_.length; layer++) // Iterates through the hidden and output layers.
       {
          for (int i = 0; i < nodes_[layer].length; i++) // Iterates through each Node in the current layer.
          {
-            for (int j = 0; j < nodes_[layer][i].weights_.length; j++)
+            for (int j = 0; j < nodes_[layer][i].weights_.length; j++) // Iterates through each weight of the Node.
             {
                double currentWeightGrad = nodes_[layer][i].weightsGradientSum_[j];
                
@@ -578,9 +497,10 @@ public class Perceptron2
                }
             }
          }
-      }
+      } // for (int layer = 1; layer < nodes_.length; layer++) // Iterates through the hidden and output layers.
       return max;
    }
+   
    /**
     * Updates the weights of all Nodes based on the learning factor.
     *
@@ -595,7 +515,7 @@ public class Perceptron2
             /*
              * Calls updateWeights on every Node in the network,
              * which adds the weight gradient sums of each Node multiplied by the learning factor
-             * to the respective weights of the Node 
+             * to the respective weights of the Node.
              */
             nodes_[i][j].updateWeights(learningFactor);
          }
@@ -603,11 +523,11 @@ public class Perceptron2
    }
    
    /**
-    * Returns the array of errors based on one case.
+    * Returns an array of errors based on one case.
     *
     * @param inputs  The inputs to feed into the net.
     * @param truths   The expected output array.
-    * @return  The sum of the squares of the differences between the outputs and truths, divided by two.
+    * @return  An array of the squares of the differences between the outputs and truths, divided by two.
     */
    public double[] getErrorVector(double[] inputs, double[] truths)
    {
@@ -660,7 +580,6 @@ public class Perceptron2
       }
    }
    
-   
    /**
     * Returns an array of average errors for all output activations over all cases.
     * The size of the array is equal to the number of outputs.
@@ -670,14 +589,17 @@ public class Perceptron2
    public double[] getAverageErrorVector()
    {
       double[] sums = new double[OUTPUT_DIM_];
+      
       for (int i = 0; i < NUM_CASES_; i++) // Iterates through number of cases.
       {
          double[] caseError = getErrorVector(inputs_[i], truths_[i]);
+         
          for (int j = 0; j < OUTPUT_DIM_; j++) // Iterates through number of outputs.
          {
             sums[j] += caseError[j] / NUM_CASES_;
          }
       }
+      
       return sums;
    }
    
@@ -689,7 +611,9 @@ public class Perceptron2
    public double getAverageErrorScalar()
    {
       double[] averageErrors = getAverageErrorVector();
+      
       double sum = 0.0;
+      
       for (int i = 0; i < averageErrors.length; i++)
       {
          sum += averageErrors[i];
@@ -784,7 +708,7 @@ public class Perceptron2
    }
    
    /**
-    * Checks the end conditions of training, and returns an appropriate value of done.
+    * Checks the end conditions of training, and returns an int based on which condition is met, if any.
     * @param averageError     The average error among all cases.
     * @param errorBefore      The error before weights are changed.
     * @param error            The error after weights are changed.
@@ -825,6 +749,7 @@ public class Perceptron2
       }
       return done;
    }
+   
    /**
     * Prints an error message based on the value of the given int.
     * Used in training.
@@ -893,7 +818,6 @@ public class Perceptron2
     */
    public String[][] getRawData(String s)
    {
-      //String s = "/Users/martinbourdev/IdeaProjects/Perceptron1/text/input";
       try 
       {
          BufferedReader counter1 = new BufferedReader(new FileReader(s));
@@ -968,6 +892,7 @@ public class Perceptron2
       for (int i = 0; i < nodes_.length; i++) // Iterates through each layer of activations.
       {
          System.out.println("LAYER " + i);
+         
          for (int j = 0; j < nodes_[i].length; j++)   // Iterates through each activation in layer i.
          {
             Node n = nodes_[i][j];
@@ -1052,20 +977,20 @@ public class Perceptron2
     */
    public void convertOutputsToBMPs(int index)
    {
-      int[][] intOutputs = new int[0][0];
       for (int i = 0; i < NUM_CASES_; i++)
       {
-         double[] doubleOutputs = forward(inputs_[0]);
-         intOutputs = new int[doubleOutputs.length][1];
+         double[] doubleOutputs = forward(inputs_[i]);
+         
          try
          {
             PrintWriter out = new PrintWriter(new FileWriter("finalOutPels" + i));
+            
             for (int j = 0; j < OUTPUT_DIM_; j++)
             {
                int unscaledPel = unscalePel(doubleOutputs[j]);
                out.println(unscaledPel);
-               intOutputs[j][0] = unscaledPel;
             }
+            
             out.close();
             int[][] pelsIntArray = dibDump_.pelsFileToArray("finalOutPels" + i);
             dibDump_.writeBMPFile(outputFileName_ + i + "-" + index + "" + ".bmp", pelsIntArray);
@@ -1074,9 +999,7 @@ public class Perceptron2
          {
             throw new RuntimeException(e);
          }
-      }
-      
-      assert (intOutputs.length != 0);
+      } // for (int i = 0; i < NUM_CASES_; i++)
       
    }
    
@@ -1086,6 +1009,7 @@ public class Perceptron2
    public void writeWeightsToFile()
    {
       ArrayList<String> weights = new ArrayList<String>();
+      
       for (int i = 0; i < nodes_.length; i++)
       {
          for (int j = 0; j < nodes_[i].length; j++)
@@ -1117,6 +1041,7 @@ public class Perceptron2
          for (int j = 0; j < nodes_[i].length; j++)
          {
             Node n = nodes_[i][j];
+            
             for (int k = 0; k < n.weights_.length; k++)
             {
                n.weights_[k] = Double.parseDouble(newWeights[index][0]);
@@ -1125,6 +1050,7 @@ public class Perceptron2
          }
       } // for (int i = 0; i < nodes_.length; i++)
    }
+   
    /**
     * Creates a new Perceptron and has it call the test() method.
     * @param args The arguments for the main method.

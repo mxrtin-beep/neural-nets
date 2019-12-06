@@ -46,7 +46,7 @@ public class Node
     */
    public void forward(Node[] prevLayer)
    {
-      double weightedSum = 0;
+      double weightedSum = 0.0;
       for (int i = 0; i < weights_.length; i++)
       {
          weightedSum += prevLayer[i].activation_ * weights_[i];
@@ -59,7 +59,7 @@ public class Node
     * Adds to the incoming gradient of the Nodes of the previous layer.
     * Assumes that the incoming gradient of the Node calling this method is set.
     *
-    * @param prevLayer  The Nodes of the previous layer.2
+    * @param prevLayer  The Nodes of the previous layer.
     */
    public void backward(Node[] prevLayer)
    {
@@ -84,7 +84,7 @@ public class Node
    {
       for (int i = 0; i < weights_.length; i++)
       {
-         weightsGradientSum_[i] = 0;
+         weightsGradientSum_[i] = 0.0;
       }
    }
    
@@ -106,7 +106,7 @@ public class Node
     */
    public double getAvgGradientMagnitude()
    {
-      double mag = 0;
+      double mag = 0.0;
       for (int i = 0; i < weights_.length; i++)
       {
          mag += Math.abs(weightsGradientSum_[i]);
@@ -117,7 +117,7 @@ public class Node
    /**
     * Returns the sigmoid of a given value.
     * @param x The given value to pass through the sigmoid function.
-    * @return  1 / (1 + e^-x).
+    * @return  1.0 / (1.0 + e^-x).
     */
    private double sigmoid(double x)
    {
@@ -131,7 +131,7 @@ public class Node
     */
    private double sigmoidDeriv(double y)
    {
-      return y * (1 - y);
+      return y * (1.0 - y);
    }
    
    /**
@@ -145,8 +145,8 @@ public class Node
    }
    
    /**
-    * Returns an activation y passed through the derivative of the activation function.
-    * @param y The activation, which has already been passed through the activation function.
+    * Returns a double y passed through the derivative of the activation function.
+    * @param y The given double.
     * @return  The value y passed through the derivative of the activation function.
     */
    private double activationDeriv(double y)
@@ -156,15 +156,17 @@ public class Node
    
    /**
     * Puts the weights and activations of the Node in the form of a String.
-    * @return all the weights and the activation in the form of a String.
+    * @return All the weights and the activation in the form of a String.
     */
    public String toString()
    {
       String s = "";
+      
       for (int i = 0; i < weights_.length; i++)
       {
          s += "Weight" + i + ": " + weights_[i] + " ";
       }
+      
       s += "Activation: " + activation_;
       return s;
    }
